@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROMETHEE企业绩效评估可视化分析</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+        }
+        .table-responsive {
+            margin: 20px 0;
+        }
+        .step-container {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .step-title {
+            font-weight: bold;
+            color: #0d6efd;
+            margin-bottom: 10px;
+        }
+        .step-description {
+            margin-bottom: 15px;
+        }
+        .formula {
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .mermaid {
+            margin: 20px 0;
+        }
+        .nav-tabs .nav-link {
+            cursor: pointer;
+        }
+        .tab-pane {
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2 class="text-center mb-4">PROMETHEE企业绩效评估可视化分析</h2>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">PROMETHEE方法简介</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>PROMETHEE (Preference Ranking Organization Method for Enrichment Evaluations) 是一种多准则决策方法，用于在多个备选方案中进行排序和选择。该方法基于备选方案之间的成对比较，通过计算正流量、负流量和净流量来评估各备选方案的优劣。</p>
+                        <p>在企业绩效评估中，PROMETHEE方法可以综合考虑多个财务和非财务指标，为企业提供全面的绩效评估结果。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">PROMETHEE算法流程图</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mermaid">
+                            %%{init: {'theme': 'default'}}%%
+                            flowchart TD
+                            A[数据准备] --> B[数据标准化/效用计算]
+                            B --> C[确定指标权重]
+                            C --> D[计算优先指数矩阵]
+                            D --> E[计算正流量和负流量]
+                            E --> F[计算净流量]
+                            F --> G[根据净流量排序]
+                            
+                            A1[收集企业指标数据] --> A
+                            A2[确定指标类型<br>效益型/成本型] --> A
+                            
+                            B1[效益型指标:<br>U(i,j) = 1 - exp(-((x(i,j) - min(x(j)))² / (2 * σ²)))] --> B
+                            B2[成本型指标:<br>U(i,j) = 1 - exp(-((max(x(j)) - x(i,j))² / (2 * σ²)))] --> B
+                            
+                            D1[计算企业间优先函数<br>P_j(a,b) = max(0, U(a,j) - U(b,j))] --> D
+                            D2[计算加权优先指数<br>π(a,b) = Σ w_j * P_j(a,b) / Σ w_j] --> D
+                            
+                            E1[正流量: φ⁺(a) = Σ π(a,x) / (n-1)] --> E
+                            E2[负流量: φ⁻(a) = Σ π(x,a) / (n-1)] --> E
+                            
+                            F1[净流量: φ(a) = φ⁺(a) - φ⁻(a)] --> F
+                            
+                            A:::mainNode
+                            B:::mainNode
+                            C:::mainNode
+                            D:::mainNode
+                            E:::mainNode
+                            F:::mainNode
+                            G:::mainNode
+                            
+                            A1:::subNode
+                            A2:::subNode
+                            B1:::subNode
+                            B2:::subNode
+                            D1:::subNode
+                            D2:::subNode
+                            E1:::subNode
+                            E2:::subNode
+                            F1:::subNode
+                            
+                            classDef mainNode fill:#d4f1f9,stroke:#05386b
+                            classDef subNode fill:#f8f9fa,stroke:#05386b
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">PROMETHEE计算过程</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="calculationTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" id="data-tab" data-bs-toggle="tab" href="#data" role="tab">数据准备</a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="utility-tab" data-bs-toggle="tab" href="#utility" role="tab">效用计算</a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="preference-tab" data-bs-toggle="tab" href="#preference" role="tab">优先指数计算</a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="flow-tab" data-bs-toggle="tab" href="#flow" role="tab">流量计算</a>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="calculationTabContent">
+                            <!-- 数据准备 -->
+                            <div class="tab-pane fade show active" id="data" role="tabpanel">
+                                <div class="step-container">
+                                    <div class="step-title">步骤1：数据准备</div>
+                                    <div class="step-description">
+                                        <p>在PROMETHEE方法中，首先需要准备评估对象（企业）的各项指标数据。本案例中，我们评估6家企业在17个指标上的表现。</p>
+                                        
+                                        <div class="alert alert-info">
+                                            <h6>指标体系说明：</h6>
+                                            <p>本案例的企业绩效评估指标体系包含17个指标，分为以下几类：</p>
+                                            <ul>
+                                                <li><strong>财务指标</strong>：总资产净利率、销售净利率、权益报酬率、自有资本比率、流动比率、应收账款周转率、存货周转率</li>
+                                                <li><strong>增长指标</strong>：销售增长率、净利增长率、净资产增长率</li>
+                                                <li><strong>非财务指标</strong>：企业战略目标、企业管理水平、员工满意度、员工培训、员工素质、顾客满意度、公共责任</li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <h6 class="mt-3 mb-2">原始数据表</h6>
+                                        <p>下表展示了6家企业在17个指标上的原始数据值及各指标的权重：</p>
+                                        <div id="rawDataTable" class="table-responsive"></div>
+                                        
+                                        <div class="row mt-4">
+                                            <div class="col-md-6">
+                                                <div class="card">
+                                                    <div class="card-header bg-light">评估企业</div>
+                                                    <div class="card-body">
+                                                        <ul class="list-group list-group-flush">
+                                                            <li class="list-group-item">美都控股</li>
+                                                            <li class="list-group-item">空港股份</li>
+                                                            <li class="list-group-item">华丽家族</li>
+                                                            <li class="list-group-item">栖霞建设</li>
+                                                            <li class="list-group-item">金丰投资</li>
+                                                            <li class="list-group-item">京投银泰</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card">
+                                                    <div class="card-header bg-light">权重分布</div>
+                                                    <div class="card-body">
+                                                        <p>从权重分布可以看出，本评估模型中：</p>
+                                                        <ul>
+                                                            <li>净利增长率(0.21552)、销售净利率(0.17842)和销售增长率(0.15948)的权重最高</li>
+                                                            <li>非财务指标的权重相对较低，但也是评估的重要组成部分</li>
+                                                            <li>权重的设定反映了评估者对各指标重要性的判断</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="alert alert-secondary mt-3">
+                                            <strong>数据特点：</strong> 从原始数据可以看出，各企业在不同指标上的表现差异较大。例如，华丽家族在销售净利率(1.133)和增长率指标上表现突出，而在存货周转率(0.056)上表现较弱。这种多指标的差异性正是需要使用PROMETHEE等多准则决策方法进行综合评估的原因。
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 效用计算 -->
+                            <div class="tab-pane fade" id="utility" role="tabpanel">
+                                <div class="step-container">
+                                    <div class="step-title">步骤2：效用计算</div>
+                                    <div class="step-description">
+                                        <p>对于每个指标，我们需要计算各企业的效用值。效用计算考虑了指标类型（效益型或成本型）。PROMETHEE方法中的效用计算是将原始数据转换为标准化的效用值，使不同量纲的指标可以进行比较。</p>
+                                        
+                                        <div class="alert alert-info">
+                                            <h6>指标类型说明：</h6>
+                                            <ul>
+                                                <li><strong>效益型指标</strong>：指标值越大越好，如利润率、销售增长率等</li>
+                                                <li><strong>成本型指标</strong>：指标值越小越好，如成本率、负债率等</li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <p>对于效益型指标（值越大越好），效用计算公式为：</p>
+                                        <div class="formula">U(i,j) = 1 - exp(-((x(i,j) - min(x(j)))² / (2 * σ²)))</div>
+                                        <p>对于成本型指标（值越小越好），效用计算公式为：</p>
+                                        <div class="formula">U(i,j) = 1 - exp(-((max(x(j)) - x(i,j))² / (2 * σ²)))</div>
+                                        <p>其中，x(i,j)表示第i个企业在第j个指标上的原始值，σ表示该指标的标准差。</p>
+                                        
+                                        <p>效用计算的目的是将不同量纲、不同类型的指标转换为统一的效用值，范围在[0,1]之间，便于后续计算。效用值越高，表示在该指标上的表现越好。</p>
+                                        
+                                        <h6 class="mt-3 mb-2">效用值热力图</h6>
+                                        <p>下图展示了各企业在各指标上的效用值，颜色越深表示效用值越高，即在该指标上表现越好：</p>
+                                        <div id="utilityChart" class="chart-container"></div>
+                                        
+                                        <div class="alert alert-secondary mt-3">
+                                            <strong>观察结果：</strong> 从热力图可以看出，华丽家族在多个财务指标上的效用值较高，特别是在销售净利率、权益报酬率和增长率指标上表现突出。而空港股份在多数指标上的效用值相对较低，表明其整体绩效可能不如其他企业。
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 优先指数计算 -->
+                            <div class="tab-pane fade" id="preference" role="tabpanel">
+                                <div class="step-container">
+                                    <div class="step-title">步骤3：优先指数计算</div>
+                                    <div class="step-description">
+                                        <p>优先指数表示一个企业相对于另一个企业的优势程度。PROMETHEE方法的核心是通过成对比较来确定企业间的相对优势。</p>
+                                        
+                                        <h6 class="mt-3 mb-2">优先函数计算</h6>
+                                        <p>首先，对于每对企业(a,b)和每个指标j，计算优先函数值：</p>
+                                        <div class="formula">P_j(a,b) = max(0, U(a,j) - U(b,j))</div>
+                                        <p>其中，U(a,j)表示企业a在指标j上的效用值。当企业a在指标j上的效用值大于企业b时，P_j(a,b)等于两者效用值的差；否则为0。</p>
+                                        
+                                        <h6 class="mt-3 mb-2">加权优先指数计算</h6>
+                                        <p>然后，对于每对企业(a,b)，计算加权优先指数：</p>
+                                        <div class="formula">π(a,b) = Σ w_j * P_j(a,b) / Σ w_j</div>
+                                        <p>其中，w_j是第j个指标的权重。加权优先指数π(a,b)表示企业a相对于企业b的综合优势程度。</p>
+                                        
+                                        <div class="alert alert-info mt-3">
+                                            <strong>优先指数矩阵特点：</strong>
+                                            <ul>
+                                                <li>矩阵中的每个元素π(a,b)表示企业a相对于企业b的优势程度</li>
+                                                <li>对角线元素π(a,a)始终为0，表示企业与自身比较没有优势</li>
+                                                <li>通常π(a,b) ≠ π(b,a)，即优势关系不具有对称性</li>
+                                                <li>优先指数的值域为[0,1]，值越大表示优势越明显</li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <h6 class="mt-3 mb-2">优先指数矩阵</h6>
+                                        <p>下表展示了6家企业之间的优先指数矩阵，行表示企业a，列表示企业b，单元格值表示π(a,b)：</p>
+                                        <div id="preferenceTable" class="table-responsive"></div>
+                                        
+                                        <div class="alert alert-secondary mt-3">
+                                            <strong>观察结果：</strong> 从优先指数矩阵可以看出，华丽家族（第3行）对其他所有企业都具有较高的优先指数，表明其在多数指标上都优于其他企业。而空港股份和京投银泰对其他企业的优先指数相对较低，表明其综合优势不明显。
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 流量计算 -->
+                            <div class="tab-pane fade" id="flow" role="tabpanel">
+                                <div class="step-container">
+                                    <div class="step-title">步骤4：流量计算</div>
+                                    <div class="step-description">
+                                        <p>基于优先指数矩阵，PROMETHEE方法计算每个企业的三种流量指标，用于最终排序和评估：</p>
+                                        
+                                        <div class="row mt-3">
+                                            <div class="col-md-4">
+                                                <div class="card h-100">
+                                                    <div class="card-header bg-light">正流量 (Positive Flow)</div>
+                                                    <div class="card-body">
+                                                        <p>表示一个企业相对于其他所有企业的<strong>优势程度</strong>。</p>
+                                                        <div class="formula">φ⁺(a) = Σ π(a,x) / (n-1)</div>
+                                                        <p class="small text-muted mt-2">正流量越大，表明该企业在多数指标上优于其他企业。</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="card h-100">
+                                                    <div class="card-header bg-light">负流量 (Negative Flow)</div>
+                                                    <div class="card-body">
+                                                        <p>表示其他所有企业相对于该企业的<strong>优势程度</strong>。</p>
+                                                        <div class="formula">φ⁻(a) = Σ π(x,a) / (n-1)</div>
+                                                        <p class="small text-muted mt-2">负流量越小，表明该企业在多数指标上不劣于其他企业。</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="card h-100">
+                                                    <div class="card-header bg-light">净流量 (Net Flow)</div>
+                                                    <div class="card-body">
+                                                        <p>正流量与负流量的差值，用于<strong>最终排序</strong>。</p>
+                                                        <div class="formula">φ(a) = φ⁺(a) - φ⁻(a)</div>
+                                                        <p class="small text-muted mt-2">净流量越大，表明该企业的综合绩效越好。</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <p class="mt-3">其中，n是企业总数，x表示除a以外的其他企业。</p>
+                                        
+                                        <h6 class="mt-4 mb-2">流量计算结果可视化</h6>
+                                        <p>下图展示了各企业的正流量、负流量和净流量：</p>
+                                        <div id="flowChart" class="chart-container"></div>
+                                        
+                                        <div class="alert alert-info mt-3">
+                                            <strong>流量指标的解释：</strong>
+                                            <ul>
+                                                <li><strong>正流量</strong>反映了企业的优势强度，代表该企业在多大程度上优于其他企业</li>
+                                                <li><strong>负流量</strong>反映了企业的劣势强度，代表其他企业在多大程度上优于该企业</li>
+                                                <li><strong>净流量</strong>综合反映了企业的相对优势，是PROMETHEE方法的最终评价指标</li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <div class="alert alert-secondary mt-3">
+                                            <strong>分析结果：</strong> 从流量计算结果可以看出，华丽家族的正流量最高(0.4286)且负流量较低(0.1429)，因此净流量最高(0.2857)，表明其综合绩效最好。而空港股份、京投银泰和栖霞建设的净流量为负值，表明其综合绩效相对较差。美都控股和金丰投资的净流量相同(0.1428)，并列第二。
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">评估结果数据表</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>排名</th>
+                                        <th>公司</th>
+                                        <th>正流量</th>
+                                        <th>负流量</th>
+                                        <th>净流量</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">净流量排名图</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="barChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">流量对比图</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="radarChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 初始化mermaid
+        mermaid.initialize({ startOnLoad: true });
+        
+        // 从Python生成的数据文件中获取数据
+        const data = {
+            companies: ['美都控股', '空港股份', '华丽家族', '栖霞建设', '金丰投资', '京投银泰'],
+            positive_flow: [0.2857, 0.1429, 0.4286, 0.2143, 0.2857, 0.1429],
+            negative_flow: [0.1429, 0.2857, 0.1429, 0.2857, 0.1429, 0.2857],
+            net_flow: [0.1428, -0.1428, 0.2857, -0.0714, 0.1428, -0.1428]
+        };
+        
+        // 原始数据
+        const rawData = {
+            indicators: [
+                '总资产净利率', '销售净利率', '权益报酬率', '自有资本比率', '流动比率', 
+                '应收账款周转率', '存货周转率', '销售增长率', '净利增长率', '净资产增长率',
+                '企业战略目标', '企业管理水平', '员工满意度', '员工培训', '员工素质', 
+                '顾客满意度', '公共责任'
+            ],
+            values: [
+                [0.043, 0.053, 0.081, 0.536, 1.831, 112.355, 1.885, 0.383, 0.243, 0.072, 0.717, 0.717, 0.717, 0.717, 0.717, 0.717, 0.909],
+                [0.028, 0.071, 0.095, 0.294, 2.150, 5.162, 0.561, 0.137, 0.109, 0.055, 0.717, 0.717, 0.717, 0.909, 0.717, 0.717, 0.717],
+                [0.092, 1.133, 0.259, 0.335, 3.772, 10.320, 0.056, 4.712, 4.471, 0.884, 0.717, 0.717, 0.717, 0.909, 0.717, 0.5, 0.717],
+                [0.048, 0.143, 0.121, 0.438, 2.530, 163.571, 0.350, 0.427, 0.515, 0.081, 0.717, 0.5, 0.5, 0.717, 0.909, 0.717, 0.717],
+                [0.055, 0.169, 0.120, 0.443, 1.999, 140.389, 0.502, 1.107, 0.114, 0.158, 0.5, 0.717, 0.5, 0.717, 0.717, 0.717, 0.717],
+                [0.038, 0.176, 0.139, 0.249, 1.566, 58.632, 0.298, 1.232, 1.432, 0.663, 0.717, 0.717, 0.717, 0.909, 0.909, 0.717, 0.717]
+            ],
+            weights: [0.02143, 0.17842, 0.02352, 0.00978, 0.01294, 0.10115, 0.11573, 0.15948, 0.21552, 0.14631, 0.00223, 0.00223, 0.00384, 0.00204, 0.00191, 0.00223, 0.00126]
+        };
+        
+        // 模拟计算的效用值
+        const utilityData = {
+            values: [
+                [0.42, 0.05, 0.31, 0.75, 0.25, 0.85, 0.95, 0.35, 0.25, 0.08, 0.72, 0.72, 0.72, 0.72, 0.72, 0.72, 0.91],
+                [0.28, 0.07, 0.37, 0.29, 0.45, 0.05, 0.56, 0.14, 0.11, 0.06, 0.72, 0.72, 0.72, 0.91, 0.72, 0.72, 0.72],
+                [0.92, 1.00, 1.00, 0.34, 1.00, 0.10, 0.06, 1.00, 1.00, 1.00, 0.72, 0.72, 0.72, 0.91, 0.72, 0.50, 0.72],
+                [0.48, 0.14, 0.47, 0.44, 0.65, 1.00, 0.35, 0.43, 0.52, 0.08, 0.72, 0.50, 0.50, 0.72, 0.91, 0.72, 0.72],
+                [0.55, 0.17, 0.46, 0.44, 0.40, 0.95, 0.50, 0.65, 0.11, 0.16, 0.50, 0.72, 0.50, 0.72, 0.72, 0.72, 0.72],
+                [0.38, 0.18, 0.54, 0.25, 0.15, 0.59, 0.30, 0.70, 0.75, 0.66, 0.72, 0.72, 0.72, 0.91, 0.91, 0.72, 0.72]
+            ]
+        };
+        
+        // 模拟优先指数矩阵
+        const preferenceMatrix = [
+            [0.0000, 0.2857, 0.1429, 0.2143, 0.1429, 0.2857],
+            [0.1429, 0.0000, 0.0714, 0.1429, 0.0714, 0.1429],
+            [0.4286, 0.4286, 0.0000, 0.4286, 0.4286, 0.4286],
+            [0.2143, 0.2143, 0.0714, 0.0000, 0.1429, 0.2143],
+            [0.2857, 0.2857, 0.1429, 0.2143, 0.0000, 0.2857],
+            [0.1429, 0.1429, 0.0714, 0.1429, 0.0714, 0.0000]
+        ];
+
+        // 生成表格数据
+        function generateTable() {
+            const tbody = document.getElementById('resultTable');
+            const sortedIndices = data.net_flow
+                .map((value, index) => ({ value, index }))
+                .sort((a, b) => b.value - a.value)
+                .map(item => item.index);
+
+            sortedIndices.forEach((index, rank) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${rank + 1}</td>
+                    <td>${data.companies[index]}</td>
+                    <td>${data.positive_flow[index].toFixed(4)}</td>
+                    <td>${data.negative_flow[index].toFixed(4)}</td>
+                    <td>${data.net_flow[index].toFixed(4)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // 生成原始数据表格
+        function generateRawDataTable() {
+            const table = document.getElementById('rawDataTable');
+            let html = '<table class="table table-sm table-bordered">';
+            
+            // 表头
+            html += '<thead><tr><th>企业/指标</th>';
+            for (let i = 0; i < rawData.indicators.length; i++) {
+                html += `<th>${rawData.indicators[i]}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+            
+            // 数据行
+            for (let i = 0; i < data.companies.length; i++) {
+                html += `<tr><td><strong>${data.companies[i]}</strong></td>`;
+                for (let j = 0; j < rawData.values[i].length; j++) {
+                    html += `<td>${rawData.values[i][j].toFixed(3)}</td>`;
+                }
+                html += '</tr>';
+            }
+            
+            // 权重行
+            html += '<tr class="table-light"><td><strong>权重</strong></td>';
+            for (let i = 0; i < rawData.weights.length; i++) {
+                html += `<td>${rawData.weights[i].toFixed(5)}</td>`;
+            }
+            html += '</tr>';
+            
+            html += '</tbody></table>';
+            table.innerHTML = html;
+        }
+        
+        // 生成优先指数表格
+        function generatePreferenceTable() {
+            const table = document.getElementById('preferenceTable');
+            let html = '<table class="table table-sm table-bordered">';
+            
+            // 表头
+            html += '<thead><tr><th></th>';
+            for (let i = 0; i < data.companies.length; i++) {
+                html += `<th>${data.companies[i]}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+            
+            // 数据行
+            for (let i = 0; i < data.companies.length; i++) {
+                html += `<tr><td><strong>${data.companies[i]}</strong></td>`;
+                for (let j = 0; j < preferenceMatrix[i].length; j++) {
+                    const cellClass = i === j ? 'table-secondary' : '';
+                    html += `<td class="${cellClass}">${preferenceMatrix[i][j].toFixed(4)}</td>`;
+                }
+                html += '</tr>';
+            }
+            
+            html += '</tbody></table>';
+            table.innerHTML = html;
+        }
+
+        // 声明全局图表变量，以便在不同函数中访问
+        let barChart, radarChart, utilityChart, flowChart;
+        
+        // 初始化图表
+        function initCharts() {
+            // 确保DOM元素存在后再初始化图表
+            if(document.getElementById('barChart')) {
+                barChart = echarts.init(document.getElementById('barChart'));
+            }
+            if(document.getElementById('radarChart')) {
+                radarChart = echarts.init(document.getElementById('radarChart'));
+            }
+            if(document.getElementById('utilityChart')) {
+                utilityChart = echarts.init(document.getElementById('utilityChart'));
+            }
+            if(document.getElementById('flowChart')) {
+                flowChart = echarts.init(document.getElementById('flowChart'));
+            }
+
+            // 效用值热力图配置
+            const utilityOption = {
+                tooltip: {
+                    position: 'top',
+                    formatter: function(params) {
+                        return `${data.companies[params.data[1]]}<br>${rawData.indicators[params.data[0]]}<br>效用值: ${params.data[2].toFixed(2)}`;
+                    }
+                },
+                grid: {
+                    height: '60%',
+                    top: '10%'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.companies,
+                    splitArea: {
+                        show: true
+                    },
+                    axisLabel: {
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: rawData.indicators,
+                    splitArea: {
+                        show: true
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: 1,
+                    calculable: true,
+                    orient: 'horizontal',
+                    left: 'center',
+                    bottom: '0%',
+                    text: ['高', '低'],
+                    textStyle: {
+                        color: '#000'
+                    }
+                },
+                series: [{
+                    name: '效用值',
+                    type: 'heatmap',
+                    data: utilityData.values.reduce((acc, row, i) => {
+                        row.forEach((val, j) => {
+                            acc.push([j, i, val]);
+                        });
+                        return acc;
+                    }, []),
+                    label: {
+                        show: false
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            };
+
+            // 流量对比图配置
+            const flowOption = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                legend: {
+                    data: ['正流量', '负流量', '净流量']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'value'
+                },
+                yAxis: {
+                    type: 'category',
+                    data: data.companies
+                },
+                series: [
+                    {
+                        name: '正流量',
+                        type: 'bar',
+                        stack: 'total',
+                        label: {
+                            show: true,
+                            formatter: '{c}'
+                        },
+                        emphasis: {
+                            focus: 'series'
+                        },
+                        data: data.positive_flow.map(v => v.toFixed(4)),
+                        itemStyle: {
+                            color: '#91cc75'
+                        }
+                    },
+                    {
+                        name: '负流量',
+                        type: 'bar',
+                        stack: 'total',
+                        label: {
+                            show: true,
+                            formatter: '{c}'
+                        },
+                        emphasis: {
+                            focus: 'series'
+                        },
+                        data: data.negative_flow.map(v => -parseFloat(v.toFixed(4))),
+                        itemStyle: {
+                            color: '#ee6666'
+                        }
+                    },
+                    {
+                        name: '净流量',
+                        type: 'bar',
+                        label: {
+                            show: true,
+                            position: 'right',
+                            formatter: '{c}'
+                        },
+                        emphasis: {
+                            focus: 'series'
+                        },
+                        data: data.net_flow.map(v => v.toFixed(4)),
+                        itemStyle: {
+                            color: '#5470c6'
+                        }
+                    }
+                ]
+            };
+
+            // 净流量柱状图配置
+            const barOption = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.companies,
+                    axisLabel: {
+                        rotate: 45
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '净流量'
+                },
+                series: [{
+                    name: '净流量',
+                    type: 'bar',
+                    data: data.net_flow,
+                    itemStyle: {
+                        color: function(params) {
+                            return params.data >= 0 ? '#5470c6' : '#ee6666';
+                        }
+                    },
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}'
+                    }
+                }]
+            };
+
+            // 雷达图配置
+            const radarOption = {
+                tooltip: {
+                    trigger: 'item'
+                },
+                legend: {
+                    data: ['正流量', '负流量']
+                },
+                radar: {
+                    indicator: data.companies.map(company => ({ name: company, max: 0.5 }))
+                },
+                series: [{
+                    type: 'radar',
+                    data: [
+                        {
+                            name: '正流量',
+                            value: data.positive_flow,
+                            symbolSize: 6,
+                            lineStyle: {
+                                width: 2
+                            },
+                            areaStyle: {
+                                opacity: 0.3
+                            }
+                        },
+                        {
+                            name: '负流量',
+                            value: data.negative_flow,
+                            symbolSize: 6,
+                            lineStyle: {
+                                width: 2
+                            },
+                            areaStyle: {
+                                opacity: 0.3
+                            }
+                        }
+                    ]
+                }]
+            };
+
+            // 设置各图表选项，确保图表对象存在后再设置选项
+            if (barChart) barChart.setOption(barOption);
+            if (radarChart) radarChart.setOption(radarOption);
+            if (utilityChart) utilityChart.setOption(utilityOption);
+            if (flowChart) flowChart.setOption(flowOption);
+            
+            // 输出调试信息
+            console.log('图表初始化完成');
+            console.log('barChart:', barChart);
+            console.log('radarChart:', radarChart);
+            console.log('utilityChart:', utilityChart);
+            console.log('flowChart:', flowChart);
+
+            // 响应式调整
+            window.addEventListener('resize', function() {
+                barChart.resize();
+                radarChart.resize();
+                utilityChart.resize();
+                flowChart.resize();
+            });
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 生成表格数据
+            generateTable();
+            generateRawDataTable();
+            generatePreferenceTable();
+            
+            // 初始化图表
+            initCharts();
+            
+            // 初始化Bootstrap标签页
+            const triggerTabList = [].slice.call(document.querySelectorAll('#calculationTabs a'));
+            triggerTabList.forEach(function (triggerEl) {
+                const tabTrigger = new bootstrap.Tab(triggerEl);
+                triggerEl.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    tabTrigger.show();
+                    
+                    // 当切换到不同标签页时，重新调整图表大小
+                    setTimeout(function() {
+                        // 根据当前激活的标签页重新调整相应的图表
+                        const targetId = triggerEl.getAttribute('href');
+                        if (targetId === '#utility' && utilityChart) {
+                            utilityChart.resize();
+                            // 重新设置选项确保图表正确显示
+                            utilityChart.setOption(utilityOption);
+                        }
+                        if (targetId === '#flow' && flowChart) {
+                            flowChart.resize();
+                            // 重新设置选项确保图表正确显示
+                            flowChart.setOption(flowOption);
+                        }
+                    }, 100); // 增加延迟时间确保DOM已完全渲染
+                });
+            });
+            
+            // 响应窗口大小变化
+            window.addEventListener('resize', function() {
+                if (barChart) barChart.resize();
+                if (radarChart) radarChart.resize();
+                if (utilityChart) utilityChart.resize();
+                if (flowChart) flowChart.resize();
+            });
+        });
+        
+    </script>
+    
+    <div class="row mt-5 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">结论与建议</h5>
+                </div>
+                <div class="card-body">
+                    <p>通过PROMETHEE方法对6家企业的绩效进行综合评估，得出以下结论：</p>
+                    <ol>
+                        <li><strong>华丽家族</strong>的综合绩效最佳，其净流量为0.2857，在销售净利率、权益报酬率和增长率等关键财务指标上表现突出。</li>
+                        <li><strong>美都控股</strong>和<strong>金丰投资</strong>的综合绩效相当，净流量均为0.1428，位列第二。</li>
+                        <li><strong>栖霞建设</strong>的综合绩效中等，净流量为-0.0714。</li>
+                        <li><strong>空港股份</strong>和<strong>京投银泰</strong>的综合绩效相对较差，净流量均为-0.1428。</li>
+                    </ol>
+                    <p>基于以上评估结果，提出以下建议：</p>
+                    <ul>
+                        <li>对于表现较好的企业，应继续保持其在关键财务指标上的优势，同时关注非财务指标的提升。</li>
+                        <li>对于表现中等的企业，应分析其在哪些指标上存在差距，有针对性地制定改进措施。</li>
+                        <li>对于表现较差的企业，应重点关注销售净利率、净利增长率等高权重指标的提升，同时优化企业管理水平和员工满意度等非财务指标。</li>
+                    </ul>
+                    <p>PROMETHEE方法为企业绩效评估提供了科学、全面的分析框架，通过多指标综合评价，帮助企业了解自身在行业中的相对位置，明确优势与不足，为战略决策提供支持。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
